@@ -73,31 +73,29 @@ let logs = [];
 async function load() {
     const snapshot = await db.collection("table").get();
 
-    if(snapshot.empty) {
+    if (snapshot.empty) {
         data = [
-        {subject:"Английский язык",condition:"",status:"no",color:""},
-        {subject:"Информатика",condition:"",status:"no",color:""},
-        {subject:"Физическая культура",condition:"",status:"no",color:""},
-        {subject:"Биология",condition:"",status:"no",color:""},
-        {subject:"Русский язык",condition:"",status:"no",color:""},
-        {subject:"Литература",condition:"",status:"no",color:""},
-        {subject:"Математика",condition:"",status:"no",color:""},
-        {subject:"Физика",condition:"",status:"no",color:""},
-        {subject:"История",condition:"",status:"no",color:""},
-        {subject:"Обществознание",condition:"",status:"no",color:""},
-        {subject:"ОБЗР",condition:"",status:"no",color:""},
-        {subject:"География",condition:"",status:"no",color:""},
-        {subject:"Химия",condition:"",status:"no",color:""},
-        {subject:"Индивидуальный проект",condition:"",status:"no",color:""}
+            {id:"eng",subject:"Английский язык",condition:"",status:"no",color:""},
+            {id:"inf",subject:"Информатика",condition:"",status:"no",color:""},
+            {id:"pe",subject:"Физическая культура",condition:"",status:"no",color:""},
+            {id:"bio",subject:"Биология",condition:"",status:"no",color:""},
+            {id:"ru",subject:"Русский язык",condition:"",status:"no",color:""},
+            {id:"lit",subject:"Литература",condition:"",status:"no",color:""},
+            {id:"math",subject:"Математика",condition:"",status:"no",color:""},
+            {id:"phys",subject:"Физика",condition:"",status:"no",color:""},
+            {id:"hist",subject:"История",condition:"",status:"no",color:""},
+            {id:"soc",subject:"Обществознание",condition:"",status:"no",color:""},
+            {id:"obz",subject:"ОБЗР",condition:"",status:"no",color:""},
+            {id:"geo",subject:"География",condition:"",status:"no",color:""},
+            {id:"chem",subject:"Химия",condition:"",status:"no",color:""},
+            {id:"proj",subject:"Индивидуальный проект",condition:"",status:"no",color:""}
         ];
-
         render();
-
-        await save(); 
+        await save();
         return;
     }
 
-    data = snapshot.docs.map(d=>d.data());
+    data = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
     render();
 }
 
@@ -115,16 +113,12 @@ function render() {
         return 0;
     });
 
-    sorted.forEach((item)=>{
+    sorted.forEach(item=>{
         let tr = document.createElement("tr");
         if(item.status==="yes") tr.classList.add("done");
         if(item.color==="warning") tr.classList.add("warning");
 
-        tr.innerHTML = `
-        <td>${item.subject}</td>
-        <td>${item.condition}</td>
-        <td>${item.status==="yes"?"Да":"Нет"}</td>
-        `;
+        tr.innerHTML = `<td>${item.subject}</td><td>${item.condition}</td><td>${item.status==="yes"?"Да":"Нет"}</td>`;
         tbody.appendChild(tr);
     });
 
@@ -144,13 +138,19 @@ function toggleAdmin(){
 }
 
 function apply(){
-    let i=row.value;
+    let i=document.getElementById("row").value;
+
+    let subject=document.getElementById("subject").value;
+    let condition=document.getElementById("condition").value;
+    let status=document.getElementById("status").value;
+    let color=document.getElementById("color").value;
+
     let old=JSON.stringify(data[i]);
 
-    data[i].subject=subject.value||data[i].subject;
-    data[i].condition=condition.value;
-    data[i].status=status.value;
-    data[i].color=color.value;
+    if(subject) data[i].subject=subject;
+    data[i].condition=condition;
+    data[i].status=status;
+    data[i].color=color;
 
     logs.push(`Изменение: ${old} -> ${JSON.stringify(data[i])} | ${new Date().toLocaleString()}`);
 
@@ -160,21 +160,18 @@ function apply(){
 async function save(){
     const batch = db.batch();
 
-    const col = await db.collection("table").get();
-    col.forEach(doc=>batch.delete(doc.ref));
-
     data.forEach(item=>{
-        let ref = db.collection("table").doc();
+        let ref=db.collection("table").doc(item.id);
         batch.set(ref,item);
     });
 
     logs.forEach(log=>{
-        let ref = db.collection("logs").doc();
-        batch.set(ref,{text:log});
+        db.collection("logs").add({text:log});
     });
 
     await batch.commit();
-    alert("Сохранено в облаке");
+
+    alert("Сохранено в Firebase");
 }
 
 load();
