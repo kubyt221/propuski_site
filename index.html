@@ -158,20 +158,26 @@ function apply(){
 }
 
 async function save(){
-    const batch = db.batch();
+    try {
+        const batch = db.batch();
 
-    data.forEach(item=>{
-        let ref=db.collection("table").doc(item.id);
-        batch.set(ref,item);
-    });
+        data.forEach(item=>{
+            let ref = db.collection("table").doc(item.id);
+            batch.set(ref, item);
+        });
 
-    logs.forEach(log=>{
-        db.collection("logs").add({text:log});
-    });
+        await batch.commit();
 
-    await batch.commit();
+        for(let log of logs){
+            await db.collection("logs").add({text: log});
+        }
 
-    alert("Сохранено в Firebase");
+        alert("Сохранено в Firebase");
+
+    } catch(e){
+        console.error(e);
+        alert("Ошибка: " + e.message);
+    }
 }
 
 load();
