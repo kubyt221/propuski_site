@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<title>Учебная таблица</title>
+<style>
+body {
+    font-family: Arial;
+    background: #f4f4f4;
+    margin: 0;
+    padding: 20px;
+}
+h1 {
+    text-align: center;
+}
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+}
+th, td {
+    border: 2px solid black;
+    padding: 10px;
+    text-align: center;
+}
+tr.done {
+    background: #b6fcb6;
+}
+tr.warning {
+    background: #fff3a0;
+}
+button {
+    padding: 10px 15px;
+    margin: 10px;
+    cursor: pointer;
+}
+#adminPanel {
+    display: none;
+    background: #222;
+    color: white;
+    padding: 15px;
+    margin-top: 20px;
+}
+input {
+    padding: 5px;
+}
+</style>
+</head>
+<body>
+
+<h1>Контроль исправления пар</h1>
+
+<table id="table">
+<thead>
+<tr>
+<th>Предмет</th>
+<th>Условие исправления</th>
+<th>Исправлено</th>
+</tr>
+</thead>
+<tbody></tbody>
+</table>
+
+<button onclick="toggleAdmin()">Админка</button>
+
+<div id="adminPanel">
+<h3>Редактирование</h3>
+<select id="rowSelect"></select>
+<input id="subjectInput" placeholder="Предмет">
+<input id="conditionInput" placeholder="Условие">
+<select id="statusInput">
+<option value="no">Нет</option>
+<option value="yes">Да</option>
+</select>
+<select id="colorInput">
+<option value="none">Нет</option>
+<option value="warning">Жёлтый</option>
+<option value="done">Зелёный</option>
+</select>
+<br>
+<button onclick="applyEdit()">Применить</button>
+<button onclick="saveData()">Сохранить</button>
+</div>
+
+<script>
+let data = JSON.parse(localStorage.getItem("tableData")) || [
+{subject:"Английский язык", condition:"", status:"no", color:""},
+{subject:"Информатика", condition:"", status:"no", color:""},
+{subject:"Физическая культура", condition:"", status:"no", color:""},
+{subject:"Биология", condition:"", status:"no", color:""},
+{subject:"Русский язык", condition:"", status:"no", color:""},
+{subject:"Литература", condition:"", status:"no", color:""},
+{subject:"Математика", condition:"", status:"no", color:""},
+{subject:"Физика", condition:"", status:"no", color:""},
+{subject:"История", condition:"", status:"no", color:""},
+{subject:"Обществознание", condition:"", status:"no", color:""},
+{subject:"ОБЗР", condition:"", status:"no", color:""},
+{subject:"География", condition:"", status:"no", color:""},
+{subject:"Химия", condition:"", status:"no", color:""},
+{subject:"Индивидуальный проект", condition:"", status:"no", color:""}
+];
+
+let logs = JSON.parse(localStorage.getItem("debugLogs")) || [];
+
+function render() {
+    let tbody = document.querySelector("#table tbody");
+    tbody.innerHTML = "";
+
+    let sorted = [...data];
+
+    sorted.sort((a,b)=>{
+        if(a.color==="warning") return -1;
+        if(b.color==="warning") return 1;
+        if(a.status==="yes") return 1;
+        if(b.status==="yes") return -1;
+        return 0;
+    });
+
+    sorted.forEach((item,i)=>{
+        let tr = document.createElement("tr");
+
+        if(item.status==="yes") tr.classList.add("done");
+        if(item.color==="warning") tr.classList.add("warning");
+
+        tr.innerHTML = `
+        <td>${item.subject}</td>
+        <td>${item.condition}</td>
+        <td>${item.status==="yes"?"Да":"Нет"}</td>
+        `;
+        tbody.appendChild(tr);
+    });
+
+    updateSelect();
+}
+
+function updateSelect() {
+    let select = document.getElementById("rowSelect");
+    select.innerHTML = "";
+    data.forEach((item,i)=>{
+        let option = document.createElement("option");
+        option.value = i;
+        option.textContent = item.subject;
+        select.appendChild(option);
+    });
+}
+
+function toggleAdmin() {
+    let panel = document.getElementById("adminPanel");
+    panel.style.display = panel.style.display==="none"?"block":"none";
+}
+
+function applyEdit() {
+    let i = document.getElementById("rowSelect").value;
+    let old = JSON.stringify(data[i]);
+
+    data[i].subject = document.getElementById("subjectInput").value || data[i].subject;
+    data[i].condition = document.getElementById("conditionInput").value;
+    data[i].status = document.getElementById("statusInput").value;
+    data[i].color = document.getElementById("colorInput").value==="none"?"":document.getElementById("colorInput").value;
+
+    let log = `Изменение: ${old} -> ${JSON.stringify(data[i])} | ${new Date().toLocaleString()}`;
+    logs.push(log);
+
+    render();
+}
+
+function saveData() {
+    localStorage.setItem("tableData", JSON.stringify(data));
+    localStorage.setItem("debugLogs", JSON.stringify(logs));
+    alert("Сохранено");
+}
+
+render();
+</script>
+
+</body>
+</html>
